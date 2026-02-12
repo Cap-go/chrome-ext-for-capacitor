@@ -1,7 +1,7 @@
 {
   "devDependencies": {
     "@capacitor/core": "^6.1.0",
-    "@types/chrome": "^0.0.268",
+    "@types/chrome": "^0.1.0",
     "@vercel/ncc": "^0.38.1",
     "autoprefixer": "^10.4.19",
     "esbuild": "^0.23.0",
