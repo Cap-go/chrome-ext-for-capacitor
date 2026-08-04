@@ -13,6 +13,6 @@
     "zip": "node create-extension-zip.js"
   },
   "dependencies": {
-    "archiver": "^7.0.1"
+    "archiver": "^8.0.0"
   }
 }
