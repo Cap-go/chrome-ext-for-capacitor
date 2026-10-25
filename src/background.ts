@@ -1,151 +1,144 @@
-// background.ts
-
-import { devices } from './deviceConfigs';
-import { getTabState, setTabState } from './tabState';
+import { browserById } from './browserChrome';
+import { defaultDevice, deviceConfigFromState, resolveDevice } from './deviceConfigs';
+import { applyInsets, applySimulation, removeSimulation } from './simulationManager';
+import { getTabState, hydrateTabState, setTabState, TabState } from './tabState';
 import { syncState } from './uiManager';
-import { applySimulation, removeSimulation } from './simulationManager';
 
-async function handleMessage(tabId: number, message: any): Promise<any> {
-  const state = getTabState(tabId);
+interface ExtensionMessage {
+  action?: string;
+  deviceId?: string;
+  postureId?: string;
+  browserId?: string;
+  isActive?: boolean;
+  tabId?: number;
+}
+
+async function handleMessage(tabId: number, message: ExtensionMessage): Promise<{ success: true; state: TabState }> {
+  const state = await hydrateTabState(tabId);
 
   switch (message.action) {
     case 'getState':
-      return { success: true, state: state };
-    case 'changeDevice':
-      const newDevice = devices[message.deviceIndex];
-      if (newDevice) {
-        setTabState(tabId, { 
-          currentDevice: newDevice, 
-          isActive: true,
-        });
-        await applySimulation(tabId, newDevice);
-      } else {
-        throw new Error('Invalid device index');
-      }
+      return { success: true, state };
+    case 'changeDevice': {
+      const newDevice = resolveDevice(message.deviceId ?? '', message.postureId);
+      if (!newDevice) throw new Error('Unknown device');
+      const browserId = browserById(message.browserId ?? state.browserId).id;
+      await applySimulation(tabId, newDevice, browserId);
+      setTabState(tabId, { currentDevice: newDevice, isActive: true, browserId });
       break;
+    }
+    case 'changeBrowser': {
+      const browserId = browserById(message.browserId).id;
+      setTabState(tabId, { browserId });
+      await applySimulation(tabId, getTabState(tabId).currentDevice, browserId);
+      setTabState(tabId, { isActive: true });
+      break;
+    }
     case 'toggleSimulation':
-      setTabState(tabId, { isActive: message.isActive });
       if (message.isActive) {
-        await applySimulation(tabId, state.currentDevice);
+        const browserId = browserById(state.browserId).id;
+        await applySimulation(tabId, state.currentDevice, browserId);
+        setTabState(tabId, { isActive: true, browserId });
       } else {
         await removeSimulation(tabId);
+        setTabState(tabId, { isActive: false });
       }
+      break;
+    case 'deviceFrameLoaded':
+      if (state.isActive) await applyInsets(tabId, state.currentDevice, state.browserId);
       break;
     default:
       throw new Error('Unknown action');
   }
 
+  await syncState(tabId);
   return { success: true, state: getTabState(tabId) };
 }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Received message in background:', message);
-
+chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendResponse) => {
   if (!message || typeof message !== 'object') {
-    console.error('Received invalid message');
-    sendResponse({error: 'Invalid message'});
+    sendResponse({ error: 'Invalid message' });
     return false;
   }
 
-  const tabId = sender.tab?.id;
+  const tabId = sender.tab?.id ?? message.tabId;
   if (!tabId) {
-    console.error('Message received from unknown tab');
-    sendResponse({error: 'Unknown tab'});
+    sendResponse({ error: 'Unknown tab' });
     return false;
   }
 
-  // Handle the message asynchronously
-  handleMessage(tabId, message).then(response => {
-    console.log('Sending response:', response);
-    sendResponse(response);
-  }).catch(error => {
-    console.error('Error handling message:', error);
-    sendResponse({error: error.message});
-  });
+  (async () => {
+    try {
+      sendResponse(await handleMessage(tabId, message));
+    } catch (error) {
+      const messageText = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Error handling message:', error);
+      sendResponse({ error: messageText });
+    }
+  })();
 
-  // Return true to indicate that we will send a response asynchronously
   return true;
 });
 
-
-// Initialize state when a new tab is created
 chrome.tabs.onCreated.addListener((tab) => {
-  if (tab.id) {
-    setTabState(tab.id, {
-      isActive: false,
-      currentDevice: devices[0]
-    });
-    syncState(tab.id);
-  }
+  if (!tab.id) return;
+  setTabState(tab.id, {
+    isActive: false,
+    currentDevice: defaultDevice(),
+    browserId: 'app',
+  });
+  void syncState(tab.id);
 });
 
-// Clean up state when a tab is removed
-chrome.tabs.onRemoved.addListener((tabId) => {
-  chrome.storage.local.remove(tabId.toString());
-});
-
-// Reapply simulation when a tab is updated
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status === 'complete') {
     const state = getTabState(tabId);
     if (state.isActive) {
-      applySimulation(tabId, state.currentDevice)
-        .catch(error => console.error('Error reapplying simulation:', error));
+      void applySimulation(tabId, state.currentDevice, state.browserId);
     }
   }
 });
 
-// Sync state with storage on startup
 chrome.runtime.onStartup.addListener(() => {
-  chrome.tabs.query({}, (tabs) => {
-    tabs.forEach((tab) => {
-      if (tab.id) {
-        chrome.storage.local.get(tab.id.toString(), (result) => {
-          if (result[tab.id!]) {
-            setTabState(tab.id!, result[tab.id!]);
-            syncState(tab.id!);
-          }
-        });
-      }
-    });
-  });
+  void (async () => {
+    const tabs = await chrome.tabs.query({});
+    await Promise.all(tabs.map(async (tab) => {
+      if (!tab.id) return;
+      const result = await chrome.storage.local.get(tab.id.toString());
+      const stored = result[tab.id] as TabState | undefined;
+      if (!stored) return;
+      setTabState(tab.id, {
+        ...stored,
+        currentDevice: deviceConfigFromState(stored.currentDevice),
+      });
+      await syncState(tab.id);
+    }));
+  })();
 });
-
 
 async function cleanupSimulation(tabId: number) {
   const state = getTabState(tabId);
-  if (state.isActive) {
-    await removeSimulation(tabId);
-    setTabState(tabId, { isActive: false });
-    syncState(tabId);
-  }
+  if (!state.isActive) return;
+  await removeSimulation(tabId);
+  setTabState(tabId, { isActive: false });
+  await syncState(tabId);
 }
 
 chrome.runtime.onConnect.addListener((port) => {
-  if (port.name === "devtools-page") {
-    let tabId: number | undefined;
+  if (port.name !== 'devtools-page') return;
 
-    port.onMessage.addListener((message) => {
-      if (message.tabId) {
-        tabId = message.tabId;
-      }
-    });
-
-    port.onDisconnect.addListener(() => {
-      if (tabId !== undefined) {
-        cleanupSimulation(tabId);
-      }
-    });
-  }
+  let tabId: number | undefined;
+  port.onMessage.addListener((message: ExtensionMessage) => {
+    if (message.tabId) tabId = message.tabId;
+  });
+  port.onDisconnect.addListener(() => {
+    if (tabId !== undefined) void cleanupSimulation(tabId);
+  });
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
-  cleanupSimulation(tabId);
-  chrome.storage.local.remove(tabId.toString());
+  void cleanupSimulation(tabId);
+  void chrome.storage.local.remove(tabId.toString());
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'loading') {
-    cleanupSimulation(tabId);
-  }
-});
+

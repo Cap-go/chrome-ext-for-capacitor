@@ -1,42 +1,49 @@
 // uiManager.ts
 
+import { defaultDevice, deviceConfigFromState } from './deviceConfigs';
 import { getTabState, setTabState, TabState } from './tabState';
-import { devices } from './deviceConfigs';
 
-export function updateBadgeText(tabId: number) {
+export async function updateBadgeText(tabId: number) {
   const state = getTabState(tabId);
-  chrome.action.setBadgeText({ 
-    text: state.isActive ? state.currentDevice.name.slice(0, 4) : '', 
-    tabId 
-  });
-}
-
-export function syncState(tabId: number) {
-  const state = getTabState(tabId);
-  chrome.storage.local.set({ [tabId.toString()]: state });
-  updateBadgeText(tabId);
-  notifyStateChange(tabId, state);
-}
-
-export function notifyStateChange(tabId: number, state: TabState) {
-  // Notify the content script
-  chrome.tabs.sendMessage(tabId, { 
-    action: 'updateState', 
-    state: {
-      isActive: state.isActive,
-      currentDeviceName: state.currentDevice.name
-    }
-  }).catch(error => console.error('Error notifying content script:', error));
-
-  // Notify the DevTools panel
-  chrome.runtime.sendMessage({ 
-    action: 'updateState', 
+  await chrome.action.setBadgeText({
+    text: state.isActive ? state.currentDevice.name.slice(0, 4) : '',
     tabId,
-    state: {
-      isActive: state.isActive,
-      currentDevice: state.currentDevice
-    }
   });
+}
+
+export async function syncState(tabId: number) {
+  const state = getTabState(tabId);
+  await chrome.storage.local.set({ [tabId.toString()]: state });
+  await updateBadgeText(tabId);
+  await notifyStateChange(tabId, state);
+}
+
+export async function notifyStateChange(tabId: number, state: TabState) {
+  try {
+    await chrome.tabs.sendMessage(tabId, {
+      action: 'updateState',
+      state: {
+        isActive: state.isActive,
+        currentDeviceName: state.currentDevice.name,
+      },
+    });
+  } catch (error) {
+    console.error('Error notifying content script:', error);
+  }
+
+  try {
+    await chrome.runtime.sendMessage({
+      action: 'updateState',
+      tabId,
+      state: {
+        isActive: state.isActive,
+        currentDevice: state.currentDevice,
+        browserId: state.browserId,
+      },
+    });
+  } catch (error) {
+    console.error('Error notifying DevTools panel:', error);
+  }
 }
 
 export async function updateState(tabId: number, updates: Partial<TabState>) {
@@ -49,22 +56,26 @@ export async function updateState(tabId: number, updates: Partial<TabState>) {
 
 export async function initializeState(tabId: number) {
   const state = await chrome.storage.local.get(tabId.toString());
-  if (state[tabId]) {
-    setTabState(tabId, state[tabId]);
+  const stored = state[tabId] as TabState | undefined;
+  if (stored) {
+    setTabState(tabId, {
+      ...stored,
+      currentDevice: deviceConfigFromState(stored.currentDevice),
+    });
   } else {
-    // Set default state if not found
     setTabState(tabId, {
       isActive: false,
-      currentDevice: devices[0] // Set the first device as default
+      currentDevice: defaultDevice(),
+      browserId: 'app',
     });
   }
-  syncState(tabId);
+  await syncState(tabId);
 }
 
 // Listen for tab updates
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status === 'complete') {
-    syncState(tabId);
+    void syncState(tabId);
   }
 });
 

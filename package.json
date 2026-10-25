@@ -1,18 +1,29 @@
 {
-  "devDependencies": {
-    "@capacitor/core": "^6.1.0",
-    "@types/chrome": "^0.0.268",
-    "@vercel/ncc": "^0.38.1",
-    "autoprefixer": "^10.4.19",
-    "esbuild": "^0.23.0",
-    "postcss": "^8.4.39",
-    "tailwindcss": "^3.4.4"
+  "name": "capacitor-safe-area-simulator",
+  "private": true,
+  "version": "1.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
   },
   "scripts": {
     "build": "node build.js",
-    "zip": "node create-extension-zip.js"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm test && npm run build",
+    "zip": "npm run build && node create-extension-zip.js"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.3",
     "archiver": "^7.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/chrome": "^0.3.6",
+    "esbuild": "^0.28.2",
+    "postcss": "^8.5.31",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
   }
 }

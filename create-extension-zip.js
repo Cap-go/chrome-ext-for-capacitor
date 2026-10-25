@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-const { createWriteStream } = require('node:fs');
-const { readdir, stat } = require('node:fs/promises');
-const { join, resolve } = require('node:path');
-const archiver = require('archiver');
+import { createWriteStream } from 'node:fs';
+import { readdir, stat } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import archiver from 'archiver';
 
 async function addDirectoryToArchive(archive, directory, baseDir) {
   const files = await readdir(directory);
@@ -20,31 +20,30 @@ async function addDirectoryToArchive(archive, directory, baseDir) {
 }
 
 async function createExtensionZip() {
-  const rootDir = resolve(__dirname);
+  const rootDir = resolve(import.meta.dirname);
   const distDir = join(rootDir, 'dist');
   const assetsDir = join(rootDir, 'assets');
   const outputFile = join(rootDir, 'extension.zip');
 
   const output = createWriteStream(outputFile);
   const archive = archiver('zip', { zlib: { level: 9 } });
+  const finished = new Promise((resolvePromise, reject) => {
+    output.on('close', resolvePromise);
+    archive.on('error', reject);
+  });
 
   archive.pipe(output);
-
-  try {
-    // Add manifest.json from the parent directory
-    archive.file(join(rootDir, 'manifest.json'), { name: 'manifest.json' });
-
-    // Add all files from the dist directory, maintaining the folder structure
-    await addDirectoryToArchive(archive, distDir, rootDir);
-
-    // Add all files from the assets directory, maintaining the folder structure
-    await addDirectoryToArchive(archive, assetsDir, rootDir);
-
-    await archive.finalize();
-    console.log(`Extension zip created: ${outputFile}`);
-  } catch (error) {
-    console.error('Error creating zip:', error);
-  }
+  archive.file(join(rootDir, 'manifest.json'), { name: 'manifest.json' });
+  await addDirectoryToArchive(archive, distDir, rootDir);
+  await addDirectoryToArchive(archive, assetsDir, rootDir);
+  await archive.finalize();
+  await finished;
+  console.log(`Extension zip created: ${outputFile}`);
 }
 
-createExtensionZip();
+try {
+  await createExtensionZip();
+} catch (error) {
+  console.error('Error creating zip:', error);
+  process.exitCode = 1;
+}

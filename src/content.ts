@@ -21,12 +21,17 @@ function getOrRegisterPlugin(pluginName: string) {
   return registeredPlugins[pluginName];
 }
 
+function platformFor(device: DeviceConfig): 'ios' | 'android' {
+  if (device.platform) return device.platform;
+  return /iphone|ipad/i.test(device.name) ? 'ios' : 'android';
+}
+
 function overrideSafeArea(device: DeviceConfig) {
   console.log(`Capacitor Safe Area Simulator: Overriding for ${device.name}`);
-  
+
   window.Capacitor = {
     ...window.Capacitor,
-    getPlatform: () => device.name.toLowerCase().includes('iphone') ? 'ios' : 'android',
+    getPlatform: () => platformFor(device),
     isNativePlatform: () => true,
     isPluginAvailable: () => true,
   };
@@ -85,6 +90,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse(status);
       break;
     case 'changeDevice':
+    case 'changeBrowser':
     case 'toggleSimulation':
     case 'toggleCamera':
       // Forward these actions to the background script

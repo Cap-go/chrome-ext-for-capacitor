@@ -1,12 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <title>Capacitor Safe Area Simulator</title>
   <link href="styles.css" rel="stylesheet">
 </head>
 <body class="p-4 text-gray-900 bg-white dark:bg-gray-800 dark:text-white">
   <div class="space-y-4">
-    <select id="deviceSelector" class="p-2 bg-white border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600"></select>
+    <div class="space-y-1">
+      <label class="block text-sm" for="deviceSearch">Find a device</label>
+      <input id="deviceSearch" type="search" placeholder="iPhone Duo, Fold, Pixel…" class="w-full p-2 bg-white border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600">
+    </div>
+    <div class="space-y-1">
+      <label class="block text-sm" for="deviceSelector">Device</label>
+      <select id="deviceSelector" class="w-full py-2 pl-2 pr-10 bg-white border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600"></select>
+    </div>
+    <div id="postureField" class="space-y-1" hidden>
+      <label class="block text-sm" for="postureSelector">Posture</label>
+      <select id="postureSelector" class="w-full py-2 pl-2 pr-10 bg-white border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600"></select>
+    </div>
+    <div class="space-y-1">
+      <label class="block text-sm" for="browserSelector">Browser</label>
+      <select id="browserSelector" class="w-full py-2 pl-2 pr-10 bg-white border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600"></select>
+    </div>
     <div class="flex items-center space-x-2">
       <label class="relative inline-flex items-center cursor-pointer">
         <input type="checkbox" id="toggleSimulation" class="sr-only peer">
@@ -15,10 +31,11 @@
       </label>
     </div>
     <div id="status" class="font-bold"></div>
-    <a href="https://capgo.app/" target="_blank" class="mt-4 text-blue-300 hover:underline">
+    <p id="deviceDetails" class="text-sm leading-5 text-gray-600 dark:text-gray-300"></p>
+    <a href="https://capgo.app/" target="_blank" class="inline-block text-blue-300 hover:underline">
       Capgo - Live Updates for Capacitor
     </a>
   </div>
-  <script src="panel.js"></script>
+  <script type="module" src="panel.js"></script>
 </body>
 </html>

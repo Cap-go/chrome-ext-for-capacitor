@@ -40,20 +40,10 @@ This extension is capable to simulate the safe area of the following frameworks:
 - Konsta UI
 - Tailwind with plugin Tailwind Capacitor
 
-Each framework need to be added manually as we cannot override the safe area var of the browser.
+Ionic, Konsta UI, and Tailwind Capacitor layouts follow the device insets, including pages that read the system safe-area values.
 
-The extension is capable to simulate the safe area of the following devices:
-- Iphone 14 Pro Max
-- Iphone SE
-- Iphone XR
-- Iphone 12 Pro
-- Pixel 7
-- Samsung Galaxy S8+
-- Samsung Galaxy S20 Ultra
-- iPad Pro
-- Galaxy Z Fold 5
-- Samsung Galaxy A51/71
-- Samsung Galaxy S21
-- Xiaomi Mi 11
+Open the device list in the DevTools panel and pick a phone, tablet, or foldable. Turning the simulation on shows the page at that device's CSS size. The Browser menu can add the bars of Safari, Chrome on iOS, Chrome on Android, Samsung Internet, Opera, or UC Browser. The app webview is the default. Foldables such as iPhone Duo, Galaxy Z Fold 8, Galaxy Z Fold 8 Ultra, Galaxy Z Fold 7, and Pixel 10 Pro Fold have a cover posture and an unfolded posture. The unfolded posture draws the crease separately from the edge insets.
+
+The list also includes the current iPhone 18 Pro, iPhone 17, and iPhone Air line, recent Pixels and Galaxy S phones, iPads, and the older presets from previous versions.
 
 Please contact us if you want to add a device to the list.
