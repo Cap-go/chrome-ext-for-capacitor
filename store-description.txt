@@ -1,0 +1,31 @@
+SHORT DESCRIPTION
+
+Simulates safe areas and mobile browser bars for Capacitor apps, including foldables such as iPhone Duo
+
+DETAILED DESCRIPTION
+
+Check Capacitor safe-area layouts in Chrome DevTools without installing the app on a phone.
+
+Open DevTools on the page you are building, select the Capacitor Safe Area panel, pick a device, and turn the simulation on. The page is shown at that device's CSS size. Ionic, Konsta UI, and Tailwind Capacitor layouts follow the device insets, including pages that read the system safe-area values.
+
+The device list includes current phones, tablets, and foldables. iPhone 18 Pro and iPhone 18 Pro Max are at the top of the iPhone group. iPhone Duo, Galaxy Z Fold 8, Galaxy Z Fold 8 Ultra, Galaxy Z Fold 7, Galaxy Z Fold 6, Pixel 10 Pro Fold, and Pixel 9 Pro Fold each have a cover view and an unfolded view. The crease is drawn on the screen and is not added to the four edge insets. Older phones from the 1.0 list are still included.
+
+A Browser menu adds the bars of Safari, Chrome on iOS, Chrome on Android, Samsung Internet, Opera, or UC Browser. Those are the top mobile browsers. Chrome is listed twice because the iOS bar and the Android bar sit in different places. The app webview is the default and draws no bars.
+
+Safari and Chrome on iOS draw over the page. The safe area stays the device's status bar and home indicator. On iPhone Duo, Safari uses the published page size with the bar open. Chrome on Android places its toolbar outside the page. Samsung Internet keeps the address bar on top and the buttons on the bottom. Opera and UC Browser keep the address bar at the bottom.
+
+The chosen device and browser for the inspected tab are stored on this computer. Nothing is sent to a server. The extension does not sell data, use analytics, or read the page for its own purposes.
+
+HOW TO USE
+1. Install the extension.
+2. Open DevTools on your app.
+3. Open the Capacitor Safe Area panel.
+4. Pick a device. For a foldable, pick Cover or Unfolded.
+5. Pick App webview, or a mobile browser.
+6. Turn the simulation on.
+
+SUPPORT
+https://github.com/Cap-go/chrome-ext-for-capacitor/issues
+hello@forgr.ee
+
+Version 1.1.0 adds current phones and foldables, including iPhone 18 Pro, iPhone 18 Pro Max, and iPhone Duo, plus mobile browser bars.

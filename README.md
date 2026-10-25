@@ -15,6 +15,20 @@ This is a chrome extension that allows you to simulate a real device in your bro
 
 Then open the inspector and click on the tab "Capacitor Safe Area Simulator".
 
+## Screenshots
+
+![iPhone 18 Pro in the app webview](store/screenshot-1-iphone-18-pro.jpg)
+
+![Safari on iPhone 18 Pro](store/screenshot-2-safari.jpg)
+
+![iPhone Duo cover](store/screenshot-3-duo-cover.jpg)
+
+![iPhone Duo unfolded with Safari](store/screenshot-4-duo-unfolded.jpg)
+
+![Chrome on Pixel 10](store/screenshot-5-chrome-android.jpg)
+
+The small promo tile and the marquee tile are in `store/` as well. The paste-ready Chrome Web Store text is in `store-description.txt`.
+
 ## Description
 
 This extension simplify your development process by simulating a real device in your browser. It is useful for testing your capacitor designs on different devices.
