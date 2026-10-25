@@ -60,7 +60,7 @@ English
 
 | Asset | Dimensions | Status | Filename |
 |-------|-----------|--------|----------|
-| Store Icon [REQUIRED] | 128×128 PNG | ✅ Ready | assets/icon128.png. Blue phone with the top and bottom safe-area bands. Toolbar sizes are assets/icon16.png and assets/icon48.png. |
+| Store Icon [REQUIRED] | 128×128 PNG | ✅ Ready | store/icon-128.png and assets/icon128.png. 96×96 artwork with 16px transparent padding. Toolbar sizes are assets/icon16.png and assets/icon48.png. |
 | Screenshot 1 [REQUIRED] | 1280×800 JPEG | ✅ Ready | store/screenshot-1-iphone-18-pro.jpg |
 | Screenshot 2 | 1280×800 JPEG | ✅ Ready | store/screenshot-2-safari.jpg |
 | Screenshot 3 | 1280×800 JPEG | ✅ Ready | store/screenshot-3-duo-cover.jpg |
