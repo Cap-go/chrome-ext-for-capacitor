@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { createWriteStream } from 'node:fs';
-import { readdir, stat } from 'node:fs/promises';
+import { readdir, rename, stat, unlink } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 
 async function addDirectoryToArchive(archive, directory, baseDir) {
   const files = await readdir(directory);
@@ -24,21 +24,30 @@ async function createExtensionZip() {
   const distDir = join(rootDir, 'dist');
   const assetsDir = join(rootDir, 'assets');
   const outputFile = join(rootDir, 'extension.zip');
+  const tempFile = `${outputFile}.tmp`;
 
-  const output = createWriteStream(outputFile);
-  const archive = archiver('zip', { zlib: { level: 9 } });
+  await unlink(tempFile).catch(() => {});
+
+  const output = createWriteStream(tempFile);
+  const archive = new ZipArchive({ zlib: { level: 9 } });
   const finished = new Promise((resolvePromise, reject) => {
     output.on('close', resolvePromise);
     archive.on('error', reject);
   });
 
-  archive.pipe(output);
-  archive.file(join(rootDir, 'manifest.json'), { name: 'manifest.json' });
-  await addDirectoryToArchive(archive, distDir, rootDir);
-  await addDirectoryToArchive(archive, assetsDir, rootDir);
-  await archive.finalize();
-  await finished;
-  console.log(`Extension zip created: ${outputFile}`);
+  try {
+    archive.pipe(output);
+    archive.file(join(rootDir, 'manifest.json'), { name: 'manifest.json' });
+    await addDirectoryToArchive(archive, distDir, rootDir);
+    await addDirectoryToArchive(archive, assetsDir, rootDir);
+    await archive.finalize();
+    await finished;
+    await rename(tempFile, outputFile);
+    console.log(`Extension zip created: ${outputFile}`);
+  } catch (error) {
+    await unlink(tempFile).catch(() => {});
+    throw error;
+  }
 }
 
 try {
